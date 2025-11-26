@@ -1,0 +1,10 @@
+template-file-path: covid-centre.pharmeasy.in.yaml
+parameters:
+  OriginDomainName: shellkode-cloudformation.s3.us-east-1.amazonaws.com
+  ExistingNoStoreCachePolicyId: 8b83fea7-7dee-4315-87f7-e2635c0ce329
+  ExistingORPId: 8c7b8a83-bb01-43e7-8e9e-1956702c42c1
+  ACMCertificateArn: >-
+    arn:aws:acm:us-east-1:732041584766:certificate/1a034495-681b-4ea6-802b-b96d5cd7070e
+  DomainAliases: covid-centre.haristeeltech.com
+  EnableResponseHeadersPolicy: 'false'
+tags: {}
