@@ -87,7 +87,7 @@ Resources:
             AllowedMethods: [GET, HEAD, OPTIONS, PUT, POST, PATCH, DELETE]
             CachedMethods: [GET, HEAD]
             CachePolicyId: !Ref ExistingNoStoreCachePolicyId
-            OriginRequestPolicyId: !Ref ExistingORPId
+        /#    OriginRequestPolicyId: !Ref ExistingORPId
 #            ResponseHeadersPolicyId: !If [ AttachResponseHeaders, !Ref ExistingResponseHeadersPolicyId, !Ref "AWS::NoValue" ]
             Compress: true
 
