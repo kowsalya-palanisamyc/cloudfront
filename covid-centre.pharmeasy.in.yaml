@@ -1,0 +1,97 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  CloudFront distribution for covid-centre.pharmeasy.in (Akamai v2 parity).
+  Implements ALB origin, path-based cache behaviors, no-store caching everywhere,
+  GraphQL forwarding, error caching, and optional security headers.
+
+Parameters:
+  OriginDomainName:
+    Type: String
+    Default: "internal-5577ef36-ambassador-ambass-9b0d-1051773329.ap-south-1.elb.amazonaws.com"
+    Description: "ALB origin domain for covid-centre.pharmeasy.in"
+
+  ExistingVpcOriginId:
+    Type: String
+    Default: "vo_8se0h39qO8gB0xlr847OQh"
+    Description: ID of the existing VPC Origin to use
+
+
+  ACMCertificateArn:
+    Type: String
+    Default: "arn:aws:acm:us-east-1:127603365779:certificate/3c236708-4cbb-40ff-8e5e-36edf3bd766b"
+    Description: "ACM certificate ARN in us-east-1 for TLS"
+
+  DomainAliases:
+    Type: CommaDelimitedList
+    Default: "covid-centre.pharmeasy.in"
+    Description: "Domain aliases (CNAMEs) for the distribution"
+
+  ExistingNoStoreCachePolicyId: 
+    Type: String
+    Default: "b873446f-0ffd-474f-8b33-d85e31072afe"
+    Description: "Optional OriginRequestPolicy ID for GraphQL (forward all)."
+
+  ExistingORPId:
+    Type: String
+    Default: "10810943-c114-4709-bcbb-4e1e71be5268"
+    Description: "Optional OriginRequestPolicy ID for GraphQL (forward all)."
+
+  EnableResponseHeadersPolicy:
+    Type: String
+    Default: "false"
+    AllowedValues: ["true", "false"]
+
+Resources:
+  CovidCentreDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        Comment: "covid-centre.pharmeasy.in CloudFront (Akamai parity)"
+        Aliases: !Ref DomainAliases
+        HttpVersion: http2and3
+        IPV6Enabled: true
+        ViewerCertificate:
+          AcmCertificateArn: !Ref ACMCertificateArn
+          SslSupportMethod: sni-only
+          MinimumProtocolVersion: TLSv1.2_2021
+
+        Origins:
+          - Id: alb-origin
+            DomainName: !Ref OriginDomainName
+            VpcOriginConfig:
+              VpcOriginId: !Ref ExistingVpcOriginId
+              OriginReadTimeout: 60
+              OriginKeepaliveTimeout: 60
+
+        DefaultCacheBehavior:
+          TargetOriginId: alb-origin
+          ViewerProtocolPolicy: redirect-to-https
+          AllowedMethods: [GET, HEAD, OPTIONS, PUT, POST, PATCH, DELETE]
+          CachedMethods: [GET, HEAD]
+          CachePolicyId: !Ref ExistingNoStoreCachePolicyId
+          OriginRequestPolicyId: !Ref ExistingORPId
+#          ResponseHeadersPolicyId: !If [ AttachResponseHeaders, !Ref ExistingResponseHeadersPolicyId, !Ref "AWS::NoValue" ]
+          Compress: true
+
+        CacheBehaviors:
+          # GraphQL
+          - PathPattern: "/graphql*"
+            TargetOriginId: alb-origin
+            ViewerProtocolPolicy: redirect-to-https
+            AllowedMethods: [GET, HEAD, OPTIONS, PUT, POST, PATCH, DELETE]
+            CachedMethods: [GET, HEAD]
+            CachePolicyId: !Ref ExistingNoStoreCachePolicyId
+            OriginRequestPolicyId: !Ref ExistingORPId
+#            ResponseHeadersPolicyId: !If [ AttachResponseHeaders, !Ref ExistingResponseHeadersPolicyId, !Ref "AWS::NoValue" ]
+            Compress: true
+
+Outputs:
+  DistributionId:
+    Value: !Ref CovidCentreDistribution
+    Description: "CloudFront distribution ID"
+
+  DistributionDomainName:
+    Value: !GetAtt CovidCentreDistribution.DomainName
+    Description: "CloudFront distribution domain name"
+
